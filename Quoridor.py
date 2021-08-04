@@ -147,51 +147,61 @@ class QuoridorGame:
 
     def _check_fence_placement(self, direction: str, coord: tuple):
         """Checks if this position is legal for fence placement"""
-        if direction != "h" and direction != "v":
-            print("Direction is not 'h' or 'v'")
-            return False
 
+        # Direction is validated during the coordinate check
+        fence_board = None
         if direction == "h":
-            if coord[0] < 0 or len(self.get_horizontal_wall_board()) < coord[0] or coord[1] < 0 or len(
-                    self.get_horizontal_wall_board()[0]) < coord[1]:
-                return False  # Coordinate is out of bounds
-            if self.get_horizontal_wall_board()[coord[1]][coord[0]] == "  ":
-                return True  # Space is open
-            else:
-                return False  # Space is not open
+            fence_board = self.get_horizontal_wall_board()
         elif direction == "v":
-            if coord[0] < 0 or len(self.get_vertical_wall_board()) < coord[0] or coord[1] < 0 or len(
-                    self.get_vertical_wall_board()[0]) < coord[1]:
-                return False  # Coordinate is out of bounds
-            print(coord)
-            if self.get_vertical_wall_board()[coord[0]][coord[1]] == "  ":
-                return True  # Space is open
-            else:
-                return False  # Space is not open
+            fence_board = self.get_vertical_wall_board()
+        else:
+            print("Something went wrong")
+            return
+        if fence_board[coord[0]][coord[1]] == "  ":
+            return True  # Space is open
+        else:
+            return False  # Space is not open
 
         print("Something went wrong in _check_fence_placement()")
         return False
 
-        # Check that a path to the end remains
+        # Check that a path to the end remains todo
+    def _fence_coordinate_check(self, direction, coord):
+        """Validates the direction and coordinates"""
+        fence_board = None
+        if direction == "v":
+            fence_board = self.get_vertical_wall_board()
+        elif direction == "h":
+            fence_board = self.get_vertical_wall_board()
+        else:
+            print("Invalid direction")
+            return False
+
+        if 0 > coord[0] or coord[0] >= len(fence_board):
+            return False # Coordinate is out of bounds
+        elif 0 > coord[1] or coord[1] >= len(fence_board[0]):
+            return False # Coordinate is out of bounds
+        else:
+            return True
 
     def set_fence_space(self, direction, coord):
         """Updates the fence board"""
         if direction == "v":
-            self._vertical_wall_board[coord[1]][coord[0]] = " |"
+            self._vertical_wall_board[coord[0]][coord[1]] = " |"
         elif direction == "h":
-            self._horizontal_wall_board[coord[1]][coord[0]] = "__"
+            self._horizontal_wall_board[coord[0]][coord[1]] = "__"
         else:
             print("Something went wrong in set_fence_space()")
 
     def _debug_fence_board(self, value, x, y, direction):
-        """debug fuction of labling each wall slot with it's coordinates."""
+        """debug function of labeling each wall slot with it's coordinates."""
         if direction == "h":
             self._horizontal_wall_board[x][y] = value
         if direction == "v":
             self._vertical_wall_board[x][y] = value
 
     def place_fence(self, player: int, direction: str, coord: tuple):
-        """Places a fence"""
+        """Placing a fence starts here"""
         if self.get_turn() != player:
             print("Not your turn player", player)
             return False
@@ -204,6 +214,11 @@ class QuoridorGame:
             coord = (coord[0] - 1, coord[1])
         if direction == "h":
             coord = (coord[0], coord[1] - 1)
+
+        if self._fence_coordinate_check(direction, coord) is False:
+            print("Coordinates are out of bounds")
+            return False
+
         if self._check_fence_placement(direction, coord):  # Check fence position is clear
             # Position is unoccupied
             self.use_a_fences(player)  # reduce number of fences
@@ -215,9 +230,9 @@ game = QuoridorGame()
 # game._debug_board_coord()
 
 game.print_board()
-game.place_fence(1, "v", (1, 0))
+game.place_fence(1, "v", (7, 0))
 game.print_board()
-game.place_fence(2, "v", (1, 1))
+game.place_fence(2, "v", (1, 0))
 game.print_board()
 game.place_fence(1, "v", (1, 2))
 game.print_board()
@@ -232,6 +247,8 @@ game.print_board()
 game.place_fence(2, "v", (1, 7))
 game.print_board()
 game.place_fence(1, "v", (1, 8))
+game.print_board()
+game.place_fence(2, "v", (1, 8))
 game.print_board()
 # game.place_fence(2, "v", (2, 3))
 # game.place_fence(1, "v", (3, 3))
