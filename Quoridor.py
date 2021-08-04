@@ -82,7 +82,7 @@ class QuoridorGame:
         else:
             print("invalid player?")
 
-    def use_a_fences(self, player):
+    def _use_a_fences(self, player):
         """Reduces the fences remaining by 1 for player"""
         if player == 1:
             self._player1_fences -= 1
@@ -91,7 +91,7 @@ class QuoridorGame:
         else:
             print("invalid player?")
 
-    def composite_board(self):
+    def _composite_board(self):
         """composites the player and wall boards"""
         master_board = []
         for x in range(len(self.get_player_board())):
@@ -111,7 +111,7 @@ class QuoridorGame:
     def print_board(self):
         """Prints the game board to console"""
         print("________Current Board_________")
-        master_board = self.composite_board()
+        master_board = self._composite_board()
         results = []
         for i in range(17):
             results.append("")
@@ -184,7 +184,7 @@ class QuoridorGame:
         else:
             return True
 
-    def set_fence_space(self, direction, coord):
+    def _set_fence_space(self, direction, coord):
         """Updates the fence board"""
         if direction == "v":
             self._vertical_wall_board[coord[0]][coord[1]] = " |"
@@ -221,8 +221,8 @@ class QuoridorGame:
 
         if self._check_fence_placement(direction, coord):  # Check fence position is clear
             # Position is unoccupied
-            self.use_a_fences(player)  # reduce number of fences
-            self.set_fence_space(direction, coord)  # Place the fence
+            self._use_a_fences(player)  # reduce number of fences
+            self._set_fence_space(direction, coord)  # Place the fence
             self.next_turn()  # End Turn
 
 
