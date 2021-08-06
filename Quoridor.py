@@ -1,12 +1,15 @@
 # Author: Cameron Bowers
 # Date: 08/03/2021
-# Description:todo
+# Description: This program is a game called quoridor
 
 class QuoridorGame:
-    """todo"""
+    """The Quoridor class contains everything needed to play the game"""
 
     def _generate_board(self):
-        """Generates a blank board"""
+        """This method is called by __init__ to generates a blank board. The blank board has 3 sub boards. One tracks
+        the player positions. One tracks the Horizontal walls. one tracks vertical walls. each board is a list
+        containing sub lists such that you can access coordinates with my_list_name[x][y] Empty player positions will
+        be tracked with the □ ascii character. empty wall position will be tracked with "  " strings. """
         y_player_row = []
         for i in range(9):
             y_player_row.append("□")
@@ -33,7 +36,13 @@ class QuoridorGame:
         return x_player_row, vertical_x_wall_row, horizontal_x_wall_row
 
     def __init__(self):
-        """Initialize variables"""
+        """Initialize variables. The __init__ method will:
+         * call _generate_board() to create blank boards
+         * Store the boards for player, horizontal wall and vertical wall for use through out our program.
+         * Set the starting player positions.
+         * Initialize the current turn to player 1 and track it's value as updated.
+         * Initialize variable to track how many fences each player have remaining.
+         """
         # Generate the boards
         self._player_board, self._vertical_wall_board, self._horizontal_wall_board = self._generate_board()
 
@@ -52,7 +61,7 @@ class QuoridorGame:
         return self._player_board
 
     def set_player_board_space(self, value, x, y):
-        """sets a space on the player board"""
+        """sets a space on the player board to value"""
         self._player_board[x][y] = value
 
     def get_vertical_wall_board(self):
@@ -68,13 +77,16 @@ class QuoridorGame:
         return self._turn
 
     def next_turn(self):
+        """This method changes the turn to the other players turn. It will be called by placing a wall or moving a
+        player """
         if self.get_turn() == 1:
             self._turn = 2
         elif self.get_turn() == 2:
             self._turn = 1
 
     def get_fences_remaining(self, player):
-        """returns the number of fences for the player"""
+        """returns the number of fences the player has remaining. This method is used as a check in place_fence() to
+        make sure the player has enough fences left. """
         if player == 1:
             return self._player1_fences
         elif player == 2:
@@ -83,7 +95,7 @@ class QuoridorGame:
             print("invalid player?")
 
     def _use_a_fences(self, player):
-        """Reduces the fences remaining by 1 for player"""
+        """Reduces the fences remaining by 1 for player. This method is used at the conclusion of the place_fence()."""
         if player == 1:
             self._player1_fences -= 1
         elif player == 2:
@@ -92,7 +104,9 @@ class QuoridorGame:
             print("invalid player?")
 
     def _composite_board(self):
-        """composites the player and wall boards"""
+        """The method is part of the print board process. It composites the player and wall boards in preparation to
+        display a beautiful ascii board in the console. This function places ⚫ characters where walls can come
+        together. The master board returned will be a list of lists."""
         master_board = []
         for x in range(len(self.get_player_board())):
             master_board.append(self.get_player_board()[x].copy())
@@ -109,7 +123,11 @@ class QuoridorGame:
         return master_board
 
     def print_board(self):
-        """Prints the game board to console"""
+        """Prints the game board to console. To do this a list of 17 strings is made. Then we cycle through the
+        master board we generated converting each list item in to a string. Because our master list is [x][y] we
+        can't just print the list of list or the orientation will be wrong in the console. We reference each list item
+        by coordinate to get them order."""
+
         print("________Current Board_________")
         master_board = self._composite_board()
         results = []
@@ -124,7 +142,8 @@ class QuoridorGame:
             print(results[x])
 
     def _debug_board_coord(self):
-        """Replaces every player square with it's coordinates then prints"""
+        """Replaces every player square with it's coordinates then prints. This method is used for debugging to verify
+        which positions are which."""
         for x in range(len(self.get_player_board())):
             for y in range(len(self.get_player_board()[x])):
                 coord = "(" + str(x) + "," + str(y) + ")"
@@ -143,7 +162,15 @@ class QuoridorGame:
         self.print_board()
 
     def move_pawn(self):
-        """todo"""
+        """This function will move a pawn once it's finished. To do this,
+        * check if the move is legal
+            * is the space open,
+            * is the space horizontal or vertical
+            * is a fence in between horizontal of vertical
+            * is the move legal with jumping a pawn rule
+
+
+        """
 
     def _check_fence_placement(self, direction: str, coord: tuple):
         """Checks if this position is legal for fence placement"""
