@@ -2,12 +2,61 @@
 # Date: 08/03/2021
 # Description: This program is a game called quoridor
 
+"""
+DETAILED TEXT DESCRIPTIONS OF HOW TO HANDLE THE SCENARIOS
+    Determining how to store the board.
+        The board is broken down into 3 parts. a _player_board, _vertical_wall_board and a _horizontal_wall_board. Each
+        are a list of list such that board[x][y] uses the first index is the list for x coordinates and the second is
+        the index for y coordinates. All 3 boards are stored in __init__
+
+    Initializing the board
+        To initialize the board the _generate_board method is used. For each of the _player_board, _vertical_wall_board
+        and _horizontal_wall_board, a list of the correct y length is created with a FOR loop. It is then copied for the
+        correct number of x positions. Strings for the spaces are filled during generation. The 3 finished boards are
+        returned to __init__() and stored.
+
+    Determining how to track which player's turn it is to play right now.
+        To track the players turn there is a variable in __init__() called _turn and a get_turn() method. Placing fences
+        and moving the player calls this method to check if the move is valid.
+
+    Determining how to validate a moving of the pawn.
+        To check if the move is legal with a sub method and return true of false. To do this it will check,
+            * Is it this players turn? call get_turn() and compare against he player perimeter
+            * Is the game over? return true/false
+            * is the space open? return true/false
+            * is the space horizontal or vertical? Needed to check the correct fence board.
+            * is a fence in between horizontally or vertically? return true/false
+            * is the move legal with jumping a pawn rule? return true/false for this special case.
+
+    Determining how to validate placing of the fences.
+        To check if a fence placement is legal,
+            * Check if it's the players turn using get_turn() and the player parameters.
+            * Check the player has fences left using get_fences_remaining() and the player parameters.
+            * Offset the coordinates to match the expected space for the Vertical or Horizontal board.
+            * Call _fence_coordinate_check() to validate direction and coordinates as in range
+            * Call _check_fence_placement() to make sure the space is open. if true:
+                * _use_a_fences(player) to reduce the number of fences for player
+                * _set_fence_space() to place the fence on the correct board at the coordinates.
+                * next_turn() ends the turn.
+
+        Determining how to keep track of fences on the board and off the board.
+            To track fences off the board 2 variables called _player1_fences and _player2_fences exist in __init__().
+            To track fences on the board 2 co boards exist called _vertical_wall_board and _horizontal_wall_board.
+            Fences are marked with __ or | ascii characters for look beautiful when printing the board. When
+            the player tries to place a fence or move the correct boards is checked for a open space of clear path.
+
+        Determining how to keep track of the pawn's position on the board.
+            To track the players position a co-board exist called _player_board stored in __init__(). pawn positions are
+            marked as a 1 or a 2. After each move the new position is updated and the old position is cleared. the board
+            uses □ ascii characters to represent spaces and look pretty when printing the board.
+"""
+
 class QuoridorGame:
     """The Quoridor class contains everything needed to play the game"""
 
     def _generate_board(self):
-        """This method is called by __init__ to generates a blank board. The blank board has 3 sub boards. One tracks
-        the player positions. One tracks the Horizontal walls. one tracks vertical walls. each board is a list
+        """This method is called by __init__ to return a generated blank board. The blank board has 3 sub boards. One
+        tracks the player positions. One tracks the Horizontal walls. one tracks vertical walls. each board is a list
         containing sub lists such that you can access coordinates with my_list_name[x][y] Empty player positions will
         be tracked with the □ ascii character. empty wall position will be tracked with "  " strings. """
         y_player_row = []
@@ -37,11 +86,11 @@ class QuoridorGame:
 
     def __init__(self):
         """Initialize variables. The __init__ method will:
-         * call _generate_board() to create blank boards
-         * Store the boards for player, horizontal wall and vertical wall for use through out our program.
-         * Set the starting player positions.
-         * Initialize the current turn to player 1 and track it's value as updated.
-         * Initialize variable to track how many fences each player have remaining.
+            * call _generate_board() to create blank boards
+            * Store the boards for player, horizontal wall and vertical wall for use through out our program.
+            * Set the starting player positions by calling set_player_board_space().
+            * Initialize the current turn to player 1 and track it's value as updated.
+            * Initialize variable to track how many fences each player have remaining.
          """
         # Generate the boards
         self._player_board, self._vertical_wall_board, self._horizontal_wall_board = self._generate_board()
@@ -85,8 +134,8 @@ class QuoridorGame:
             self._turn = 1
 
     def get_fences_remaining(self, player):
-        """returns the number of fences the player has remaining. This method is used as a check in place_fence() to
-        make sure the player has enough fences left. """
+        """returns the number of fences the player parameters has remaining. This method is used as a check in
+        place_fence() to make sure the player has enough fences left. """
         if player == 1:
             return self._player1_fences
         elif player == 2:
@@ -95,7 +144,8 @@ class QuoridorGame:
             print("invalid player?")
 
     def _use_a_fences(self, player):
-        """Reduces the fences remaining by 1 for player. This method is used at the conclusion of the place_fence()."""
+        """Reduces the fences remaining by 1 for player parameters. This method is used at the conclusion of the
+        place_fence()."""
         if player == 1:
             self._player1_fences -= 1
         elif player == 2:
@@ -106,7 +156,7 @@ class QuoridorGame:
     def _composite_board(self):
         """The method is part of the print board process. It composites the player and wall boards in preparation to
         display a beautiful ascii board in the console. This function places ⚫ characters where walls can come
-        together. The master board returned will be a list of lists."""
+        together for spacing. The master board returned will be a list of lists."""
         master_board = []
         for x in range(len(self.get_player_board())):
             master_board.append(self.get_player_board()[x].copy())
@@ -123,12 +173,17 @@ class QuoridorGame:
         return master_board
 
     def print_board(self):
-        """Prints the game board to console. To do this a list of 17 strings is made. Then we cycle through the
-        master board we generated converting each list item in to a string. Because our master list is [x][y] we
-        can't just print the list of list or the orientation will be wrong in the console. We reference each list item
-        by coordinate to get them order."""
+        """Prints the game board to console.
+            * This method calls composite_board() to get a list that contains the
+        wall and player boards.
+            * To do this a list of 17 strings is made. Then it cycles through the master board we
+        generated converting each list item in to a single string for the line string. Because our master list is [
+        x][y] we can't just print the list of list or the orientation will be wrong in the console with x running
+        vertically and y horizontally. We reference each list item by coordinate to get them ordered and oriented
+        correctly. """
 
-        print("________Current Board_________")
+        print("________Current Board_________")  # This header helps seperate the board from previous print_board()
+        # outputs
         master_board = self._composite_board()
         results = []
         for i in range(17):
@@ -142,8 +197,9 @@ class QuoridorGame:
             print(results[x])
 
     def _debug_board_coord(self):
-        """Replaces every player square with it's coordinates then prints. This method is used for debugging to verify
-        which positions are which."""
+        """Replaces every player square and wall board square with it's coordinates then prints. This method is used
+        for debugging to verify which positions are which. All player and all data is overwritten. At the end it calls
+        print_board() """
         for x in range(len(self.get_player_board())):
             for y in range(len(self.get_player_board()[x])):
                 coord = "(" + str(x) + "," + str(y) + ")"
@@ -162,18 +218,29 @@ class QuoridorGame:
         self.print_board()
 
     def move_pawn(self):
-        """This function will move a pawn once it's finished. To do this,
-        * check if the move is legal
-            * is the space open,
-            * is the space horizontal or vertical
-            * is a fence in between horizontal of vertical
-            * is the move legal with jumping a pawn rule
+        """This function will move a pawn once it's finished. It will take a player and coordinate parameter. To do this,
+        * check if the move is legal with a sub method and return true of false
+            * Is it this players turn? call get_turn() and compare against he player perimeter
+            * Is the game over? return true/false
+            * is the space open? return true/false
+            * is the space horizontal or vertical? Needed to check the correct fence board.
+            * is a fence in between horizontally or vertically? return true/false
+            * is the move legal with jumping a pawn rule? return true/false for this special case.
+        * make the move if the check returns true
+            * Update the new position to coordinates save the old position for the next step
+            * clear the old position
+            * call is_winner() to check if the player won
+            * end the turn
 
 
         """
 
     def _check_fence_placement(self, direction: str, coord: tuple):
-        """Checks if this position is legal for fence placement"""
+        """Checks if this position is legal for fence placement and returns true or false. uses direction and
+        coordinate parameters
+            * check the direction to get the correct wall board
+            * check if the space is open
+        """
 
         # Direction is validated during the coordinate check
         fence_board = None
@@ -184,6 +251,7 @@ class QuoridorGame:
         else:
             print("Something went wrong")
             return
+        # Check that a path to the end remains todo
         if fence_board[coord[0]][coord[1]] == "  ":
             return True  # Space is open
         else:
@@ -192,9 +260,10 @@ class QuoridorGame:
         print("Something went wrong in _check_fence_placement()")
         return False
 
-        # Check that a path to the end remains todo
     def _fence_coordinate_check(self, direction, coord):
-        """Validates the direction and coordinates"""
+        """Validates the direction and coordinates parameters and returns true if they are valid.
+            * Check to make sure the direction is "v" or "h"
+            * Check the coordinates are on the board"""
         fence_board = None
         if direction == "v":
             fence_board = self.get_vertical_wall_board()
@@ -212,7 +281,8 @@ class QuoridorGame:
             return True
 
     def _set_fence_space(self, direction, coord):
-        """Updates the fence board"""
+        """Updates the fence board using direction parameters for the correct board and coord to know where to place
+        the fence. This is called by place_fence() """
         if direction == "v":
             self._vertical_wall_board[coord[0]][coord[1]] = " |"
         elif direction == "h":
@@ -221,14 +291,25 @@ class QuoridorGame:
             print("Something went wrong in set_fence_space()")
 
     def _debug_fence_board(self, value, x, y, direction):
-        """debug function of labeling each wall slot with it's coordinates."""
+        """debug function of labeling each wall slot with it's coordinates.
+        *pass
+        """
         if direction == "h":
             self._horizontal_wall_board[x][y] = value
         if direction == "v":
             self._vertical_wall_board[x][y] = value
 
     def place_fence(self, player: int, direction: str, coord: tuple):
-        """Placing a fence starts here"""
+        """Placing a fence starts here. Takes a player int, direction string and coordinates as a tuple.
+            *Check if it's the players turn using player parameters.
+            *Check the player has fences left using player parameters.
+            *Offset the coordinates to match the expected space for the Vertical or Horizontal board.
+            *Call _fence_coordinate_check() to validate direction and coordinates as in range
+            *Call _check_fence_placement() to make sure the space is open. if true:
+                *_use_a_fences(player) to reduce the number of fences for player
+                *_set_fence_space(to place the fence on the correct board at the coordinates.
+                *next_turn() ends the turn
+        """
         if self.get_turn() != player:
             print("Not your turn player", player)
             return False
@@ -252,7 +333,14 @@ class QuoridorGame:
             self._set_fence_space(direction, coord)  # Place the fence
             self.next_turn()  # End Turn
 
+    def is_winner(self, player):
+        """This function will be called at the end of a player move to check if the player has won. It will check the
+        y coordinate of the players new position to see if it is the opposite side. If the player won the game this
+        function will disable future moves. I might just change the turn variable to "Game Over" as a easy way to make
+        all the whose turn is it checks fail. it takes the player parameters """
 
+
+# some test code
 game = QuoridorGame()
 # game._debug_board_coord()
 
