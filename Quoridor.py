@@ -51,6 +51,7 @@ DETAILED TEXT DESCRIPTIONS OF HOW TO HANDLE THE SCENARIOS
             uses □ ascii characters to represent spaces and look pretty when printing the board.
 """
 
+
 class QuoridorGame:
     """The Quoridor class contains everything needed to play the game"""
 
@@ -96,6 +97,9 @@ class QuoridorGame:
         self._player_board, self._vertical_wall_board, self._horizontal_wall_board = self._generate_board()
 
         # Set player starting positions
+        self._player1_position = (4, 0)
+        self._player2_position = (4, 8)
+
         self.set_player_board_space(1, 4, 0)
         self.set_player_board_space(2, 4, 8)
 
@@ -104,6 +108,8 @@ class QuoridorGame:
         # track number of fence each player has left
         self._player1_fences = 10
         self._player2_fences = 10
+
+        self._game_over = False
 
     def get_player_board(self):
         """Returns the player board"""
@@ -121,9 +127,35 @@ class QuoridorGame:
         """Return the Horizontal wall board"""
         return self._horizontal_wall_board
 
+    def fence_space_inspector(self, direction: str, coord: tuple):
+        """Inspects a space for fences to handle the offsets. direction 'h' for horizontal fences, 'v' for vertical
+        fences returns true if a fence is in the way"""
+        if coord[0] < 0 or coord[0] > 8 or coord[1] < 0 or coord[1] > 8:
+            return False  # space out of bounds
+        # Horizontal wall check
+        if direction == "h":
+            if coord[1] ==0:
+                return False  # y=0 can't have fences
+            elif self.get_horizontal_wall_board()[coord[0]][coord[1]-1] == "  ":
+                return True
+        # Vertical wall check
+        if direction == "v":
+            if coord[0] == 0:
+                return False  # x=0 can't have fences
+            elif self.get_horizontal_wall_board()[coord[0]-1][coord[1]] == "  ":
+                return True  # Space is open
+
     def get_turn(self):
         """Return the current turn"""
         return self._turn
+
+    def check_turn(self, player):
+        """Returns true of false if it's this players turn"""
+        if player == self.get_turn():
+            return True
+        else:
+            print("It is not your turn player", player)
+            return False
 
     def next_turn(self):
         """This method changes the turn to the other players turn. It will be called by placing a wall or moving a
@@ -132,6 +164,32 @@ class QuoridorGame:
             self._turn = 2
         elif self.get_turn() == 2:
             self._turn = 1
+
+    def get_player_position(self, player):
+        """Returns the position of the player piece"""
+        if player == 1:
+            return self._player1_position
+        elif player == 2:
+            return self._player2_position
+        else:
+            print("Invalid player number. int 1 or 2 expected")
+
+    def set_player_position(self, player, coords: tuple):
+        """Sets the player position to a new value"""
+        if player == 1:
+            self._player1_position = coords
+        elif player == 2:
+            self._player2_position = coords
+        else:
+            print("invalid player")
+
+    def get_game_over(self):
+        """Returns true of false value of _game_over"""
+        if self._game_over:
+            print("The game is over")
+            return self._game_over
+        else:
+            return self._game_over
 
     def get_fences_remaining(self, player):
         """returns the number of fences the player parameters has remaining. This method is used as a check in
@@ -153,11 +211,15 @@ class QuoridorGame:
         else:
             print("invalid player?")
 
-    def _composite_board(self):
+    def _composite_board(self, debug=None):
         """The method is part of the print board process. It composites the player and wall boards in preparation to
         display a beautiful ascii board in the console. This function places ⚫ characters where walls can come
         together for spacing. The master board returned will be a list of lists."""
         master_board = []
+        vertical_spacer = "⚫"
+        if debug == "debug":
+            vertical_spacer = "  ⚫  "
+
         for x in range(len(self.get_player_board())):
             master_board.append(self.get_player_board()[x].copy())
 
@@ -169,10 +231,10 @@ class QuoridorGame:
             if x < len(self.get_vertical_wall_board()):
                 master_board.insert(2 * x + 1, self.get_vertical_wall_board()[x].copy())
                 for y in range(len(master_board[2 * x + 1]) - 1):
-                    master_board[2 * x + 1].insert(-1 - 2 * y, "⚫")
+                    master_board[2 * x + 1].insert(-1 - 2 * y, vertical_spacer)
         return master_board
 
-    def print_board(self):
+    def print_board(self, debug=None):
         """Prints the game board to console.
             * This method calls composite_board() to get a list that contains the
         wall and player boards.
@@ -184,7 +246,10 @@ class QuoridorGame:
 
         print("________Current Board_________")  # This header helps seperate the board from previous print_board()
         # outputs
-        master_board = self._composite_board()
+        if debug == "debug":
+            master_board = self._composite_board("debug")
+        else:
+            master_board = self._composite_board()
         results = []
         for i in range(17):
             results.append("")
@@ -215,9 +280,129 @@ class QuoridorGame:
                 h_coord = "[H" + str(x) + "," + str(y) + "]"
                 self._debug_fence_board(h_coord, x, y, "h")
 
-        self.print_board()
+        self.print_board("debug")
 
-    def move_pawn(self):
+    def _move_space_open(self, coord: tuple):
+        """Checks if the space is open for a move"""
+        if self.get_player_board()[coord[0]][coord[1]] == "□":
+            return True
+        else:
+            return False  # this space is occupied
+
+    def _move_path_check(self, coord: tuple, player: int):
+        """Checks the move path for walls and stuff. returns true or false if the path is legal"""
+        move_type = None
+        delta_movement = [0, 0]
+        player_position = self.get_player_position(player)
+        delta_movement[0] = coord[0] - player_position[0]
+        delta_movement[1] = coord[1] - player_position[1]
+
+        # Check if movement is vertical?
+        if delta_movement == [0, -1] or delta_movement == [0, 1]:
+            move_type = "vertical"
+            if self._basic_move_check(coord, player, move_type, delta_movement):
+                return True  # No walls in the way
+            else:
+                return False  # There is a wall in the way
+        # Is movement horizontal?
+        elif delta_movement == [-1, 0] or delta_movement == [1, 0]:
+            move_type = "horizontal"
+            if self._basic_move_check(coord, player, move_type, delta_movement):
+                return True  # No walls in the way
+            else:
+                return False  # There is a wall in the way
+        # Is movement diagonal?
+        elif delta_movement == [-1, -1] or delta_movement == [-1, 1] or delta_movement == [1, 1] or delta_movement == [
+            1, -1]:
+            move_type = "diagonal"
+            if self._diagonal_move_check(coord, player, move_type, delta_movement):
+                return True
+            else:
+                return False
+        # Is it a Jump
+        elif delta_movement == [0, 2] or delta_movement == [0, -2] or delta_movement == [2, 0] or delta_movement == [-2,
+                                                                                                                     0]:
+            move_type = "jump"
+            if self._jump_move_check(coord, player, move_type, delta_movement):
+                return True
+            else:
+                return False
+        else:
+            return False  # illegal move distance
+
+    def _basic_move_check(self, coord: tuple, player, direction, delta_movement):
+        """Used for horizontal and vertical movement. Returns true if move is not blocked by walls"""
+        wall_board = None
+
+        if direction == "vertical":
+            wall_board = self.get_horizontal_wall_board()
+            delta_movement[1] -= 2  # offset coordinates for the wall board
+        elif direction == "horizontal":
+            wall_board = self.get_vertical_wall_board()
+            delta_movement[0] += 1  # offset coordinates for the wall board
+
+        fence_check_position = [coord[0] + delta_movement[0], coord[1] + delta_movement[1]]
+        if wall_board[fence_check_position[0]][fence_check_position[1]] == "  ":
+            return True
+        return False
+
+    def _diagonal_move_check(self, coord: tuple, player, direction, delta_movement):
+        """Used for the case of moving diagonally if another pawn blocks the path"""
+        vertical_fence_offset = [delta_movement[0], delta_movement[1] - 2]
+        vertical_wall_board = self.get_vertical_wall_board()
+        vertical_wall_check_coords = coord[0] + vertical_fence_offset[0]
+        # ^Incomplete? todo
+        horizontal_fence_offset = [delta_movement[0] + 1, delta_movement[1]]
+        horizontal_wall_board = self.get_horizontal_wall_board()
+
+        player_position = self.get_player_position(player)
+        if not self._move_space_open((player_position[0], player_position[1] + delta_movement[1])):
+            # The vertical space in the direction we are moving diagonally in is blocked by a player.
+            my_var = [player_position[0], player_position[1] + horizontal_fence_offset[1]]
+            my_other_var = horizontal_wall_board[my_var[0]][my_var[1]]
+            if not self.fence_space_inspector(h, (player_position[0], player_position[1]+delta_movement[1]*2)):
+            if horizontal_wall_board[player_position[0]][(player_position[1] + horizontal_fence_offset[1] - 1)] != "  ":
+                # There is a fence behind the other player
+                # todo finish this function with additional wall checks depending on instructor reply on ed discussion
+                return True
+        return False
+
+    def _jump_move_check(self, coord, player, move_type, delta_movement):
+        """Used for the case of moving diagonally if another pawn blocks the path"""
+
+        horizontal_fence_offset = [delta_movement[0] + 1, delta_movement[1]]
+        horizontal_wall_board = self.get_horizontal_wall_board()
+
+        player_position = self.get_player_position(player)
+        if self._move_space_open((player_position[0], player_position[1] + delta_movement[1])):
+            # The vertical space in the direction we are moving diagonally in is blocked by a player.
+            if horizontal_wall_board[player_position[0]][(player_position[1] + horizontal_fence_offset[1])] == "  ":
+                # There is a no fence behind the other player
+                return True  # Jump is legal
+
+    def _move_check(self, player: int, coord: tuple):
+        """
+         check if the move is legal with a sub method and return true of false
+            * Is it this players turn? call get_turn() and compare against he player perimeter
+            * Is the game over? return true/false
+            * is the space open? return true/false
+            * is the space horizontal or vertical? Needed to check the correct fence board.
+            * is a fence in between horizontally or vertically? return true/false
+            * is the move legal with jumping a pawn rule? return true/false for this special case.
+        """
+        if not self.check_turn(player):
+            return False  # It's not this players turn
+        if self.get_game_over():
+            return False  # The game is over
+        # todo Check coordinate is on the game board
+        if not self._move_space_open(coord):
+            return False  # This space is occupied
+        if not self._move_path_check(coord, player):
+            return False  # The move is blocked by a wall or illegal distance
+
+        return True  # Passed all checks
+
+    def move_pawn(self, player: int, coord: tuple):
         """This function will move a pawn once it's finished. It will take a player and coordinate parameter. To do this,
         * check if the move is legal with a sub method and return true of false
             * Is it this players turn? call get_turn() and compare against he player perimeter
@@ -227,13 +412,22 @@ class QuoridorGame:
             * is a fence in between horizontally or vertically? return true/false
             * is the move legal with jumping a pawn rule? return true/false for this special case.
         * make the move if the check returns true
-            * Update the new position to coordinates save the old position for the next step
             * clear the old position
+            * Update the new position to coordinates save the old position for the next step
             * call is_winner() to check if the player won
             * end the turn
-
-
         """
+        if self._move_check(player, coord):
+            # Move my guy
+            position_i = self.get_player_position(player)  # Record initial position
+            self.set_player_board_space("□", position_i[0], position_i[1])  # Clear the starting position
+            self.set_player_board_space(player, coord[0], coord[1])  # Place the player at the new position
+            self.set_player_position(player, coord)  # Update the player_position
+            self.is_winner(player)  # Check if the player won
+            self.next_turn()  # End the turn
+
+        else:
+            return False  # The checks fails. Some part of the move is illegal
 
     def _check_fence_placement(self, direction: str, coord: tuple):
         """Checks if this position is legal for fence placement and returns true or false. uses direction and
@@ -274,9 +468,9 @@ class QuoridorGame:
             return False
 
         if 0 > coord[0] or coord[0] >= len(fence_board):
-            return False # Coordinate is out of bounds
+            return False  # Coordinate is out of bounds
         elif 0 > coord[1] or coord[1] >= len(fence_board[0]):
-            return False # Coordinate is out of bounds
+            return False  # Coordinate is out of bounds
         else:
             return True
 
@@ -339,15 +533,28 @@ class QuoridorGame:
         function will disable future moves. I might just change the turn variable to "Game Over" as a easy way to make
         all the whose turn is it checks fail. it takes the player parameters """
 
+        if player == 1:
+            if self.get_player_position(player)[1] == 8:
+                return True  # player 1 won
+        elif player == 2:
+            if self.get_player_position(player)[1] == 0:
+                return True  # player 2 won
+
 
 # some test code
-# game = QuoridorGame()
+game = QuoridorGame()
 # game._debug_board_coord()
-#
+
 # game.print_board()
-# game.place_fence(1, "v", (7, 0))
+# game.move_pawn(1, (4, 1))
 # game.print_board()
-# game.place_fence(2, "v", (1, 0))
+# game.place_fence(2, "h", (4, 2))
+# game.print_board()
+# game.move_pawn(1, (3, 1))
+# game.print_board()
+# game.place_fence(2, "v", (4, 5))
+# game.print_board()
+# game.move_pawn(1, (4, 1))
 # game.print_board()
 # game.place_fence(1, "v", (1, 2))
 # game.print_board()
