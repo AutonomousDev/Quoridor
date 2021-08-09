@@ -136,19 +136,17 @@ class QuoridorGame:
         if direction == "h":
             if coord[1] ==0:
                 return False  # y=0 can't have fences
-            elif self.get_horizontal_wall_board()[coord[0]][coord[1]-1] == "  ":
-                return False  # Space is open
-            else:
-                return True  # Fence detected
-        # Vertical wall check
-        if direction == "v":
+            coord = (coord[0], coord[1]-1)
+        elif direction == "v":
             if coord[0] == 0:
                 return False  # x=0 can't have fences
-            elif self.get_horizontal_wall_board()[coord[0]-1][coord[1]] == "  ":
-                return False  # Space is open
-            else:
-                return True  # Fence detected
-        return False  # check failed
+            coord = (coord[0]-1, coord[1])
+        else:
+            return print("Invalid fence direction")
+        if self.get_horizontal_wall_board()[coord[0]][coord[1]] == "  ":
+            return False  # Space is open
+        else:
+            return True  # Fence detected
 
     def get_turn(self):
         """Return the current turn"""
@@ -365,7 +363,7 @@ class QuoridorGame:
             # The vertical space in the direction we are moving diagonally in is blocked by a player.
             my_var = [player_position[0], player_position[1] + horizontal_fence_offset[1]]
             my_other_var = horizontal_wall_board[my_var[0]][my_var[1]]
-            if self.fence_space_inspector("h", (player_position[0], player_position[1]+delta_movement[1]*2)):
+            if self.fence_space_inspector("h", (player_position[0], player_position[1]+(delta_movement[1]*2))):
 
                 # There is a fence behind the other player
                 # todo finish this function with additional wall checks depending on instructor reply on ed discussion
