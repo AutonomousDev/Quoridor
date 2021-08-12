@@ -91,5 +91,29 @@ class TestingQuoidor(unittest.TestCase):
         self.assertEqual(game.get_player_position(1), (4, 4))
         self.assertEqual(game.get_turn(), 1)
 
+    def test_7_use_all_fences(self):
+        """Test if we can use 11 fence boards illegally"""
+        for i in range(8):
+            game.place_fence(1, "h", (8, i))
+            game.place_fence(2, "h", (7, i))
+        game.place_fence(1, "h", (6, 1))
+        game.print_board()
+        self.assertEqual(game.fence_space_inspector("h", (6, 1)), False)
+        print(game.get_fences_remaining(1))
+        print(game.get_fences_remaining(2))
+    def test_8_winning(self):
+        """Can we win?"""
+        game.move_pawn(1, (3, 4))
+        game.move_pawn(2, (5, 3))
+        game.move_pawn(1, (3, 5))
+        game.move_pawn(2, (5, 2))
+        game.move_pawn(1, (3, 6))
+        game.move_pawn(2, (5, 1))
+        game.move_pawn(1, (3, 7))
+        game.move_pawn(2, (5, 0))
+        game.print_board()
+        self.assertEqual(game.is_winner(2), True)
+        self.assertEqual(game.move_pawn(1, (3, 8)), False)
+
 if __name__ == '__main__':
     unittest.main()

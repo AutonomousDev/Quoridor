@@ -51,11 +51,6 @@ DETAILED TEXT DESCRIPTIONS OF HOW TO HANDLE THE SCENARIOS
             uses □ ascii characters to represent spaces and look pretty when printing the board.
 """
 
-
-class Movement_data:
-    """A data class for managing fence checks"""
-
-
 class QuoridorGame:
     """The Quoridor class contains everything needed to play the game"""
 
@@ -103,16 +98,12 @@ class QuoridorGame:
         # Set player starting positions
         self._player1_position = (4, 0)
         self._player2_position = (4, 8)
-
         self.set_player_board_space(1, 4, 0)
         self.set_player_board_space(2, 4, 8)
-
         self._turn = 1  # 1 is player 1, 2 is player 2
-
         # track number of fence each player has left
         self._player1_fences = 10
         self._player2_fences = 10
-
         self._game_over = False
 
     def get_player_board(self):
@@ -192,9 +183,13 @@ class QuoridorGame:
         # 0,1 delta movement
         if not delta_fence_map[(0, 1, "h")]:
             no_fence_block[(0, 1)] = True
+        else:
+            no_fence_block[(0, 1)] = False
         # 0,-1 delta movement
         if not delta_fence_map[(0, 0, "h")]:
             no_fence_block[(0, -1)] = True
+        else:
+            no_fence_block[(0, -1)] = False
         return self._fence_check_jumps(delta_fence_map, no_fence_block)
 
     def _fence_check_jumps(self, delta_fence_map, no_fence_block):
@@ -202,9 +197,13 @@ class QuoridorGame:
         # 0,2 delta movement
         if not delta_fence_map[(0, 2, "h")] and no_fence_block[(0, 1)]:
             no_fence_block[(0, 2)] = True
+        else:
+            no_fence_block[(0, 2)] = False
         # 0,-2 delta movement
         if not delta_fence_map[(0, 1, "h")] and no_fence_block[(0, -1)]:
             no_fence_block[(0, -2)] = True
+        else:
+            no_fence_block[(0, -2)] = False
         return self._fence_check_diagonal(delta_fence_map, no_fence_block)
 
     def _fence_check_diagonal(self, delta_fence_map, no_fence_block):
@@ -392,48 +391,32 @@ class QuoridorGame:
         delta_x = coord[0] - player_position[0]
         delta_y = coord[1] - player_position[1]
         delta_movement = (delta_x, delta_y)
+        if delta_movement == (0, -1) or delta_movement == (0, 1):  # Check if movement is vertical?
+            if self._basic_move_check(coord, player, delta_movement):
+                return True  # No walls in the way
 
-        # Check if movement is vertical?
-        if delta_movement == (0, -1) or delta_movement == (0, 1):
-            move_type = "vertical"
+        elif delta_movement == (-1, 0) or delta_movement == (1, 0):  # Is movement horizontal?
             if self._basic_move_check(coord, player, delta_movement):
                 return True  # No walls in the way
-            else:
-                return False  # There is a wall in the way
-        # Is movement horizontal?
-        elif delta_movement == (-1, 0) or delta_movement == (1, 0):
-            move_type = "horizontal"
-            if self._basic_move_check(coord, player, delta_movement):
-                return True  # No walls in the way
-            else:
-                return False  # There is a wall in the way
         # Is movement diagonal?
         elif delta_movement == (-1, -1) or delta_movement == (-1, 1) or delta_movement == (1, 1) or delta_movement == (
             1, -1):
-            move_type = "diagonal"
             if self._diagonal_move_check(coord, player, delta_movement):
                 return True
-            else:
-                return False
         # Is it a Jump
         elif delta_movement == (0, 2) or delta_movement == (0, -2) or delta_movement == (2, 0) or delta_movement == (-2,
                                                                                                                      0):
-            move_type = "jump"
             if self._jump_move_check(coord, player, delta_movement):
                 return True
-            else:
-                return False
         else:
             return False  # illegal move distance
+        return False  # Check failed
 
     def _basic_move_check(self, coord: tuple, player, delta_movement):
         """Used for horizontal and vertical movement. Returns true if move is not blocked by walls"""
-
         player_position = self.get_player_position(player)
         if self.fence_check_grid(player_position)[delta_movement]:
             return True
-        else:
-            print("No clue??")
         return False
 
     def _diagonal_move_check(self, coord: tuple, player, delta_movement):
@@ -471,7 +454,6 @@ class QuoridorGame:
             return False  # It's not this players turn
         if self.get_game_over():
             return False  # The game is over
-        # todo Check coordinate is on the game board
         if not self._move_space_open(coord):
             return False  # This space is occupied
         if not self._move_path_check(coord, player):
@@ -523,11 +505,10 @@ class QuoridorGame:
             print("Something went wrong")
             return
         # Check that a path to the end remains todo
-        if fence_board[coord[0]][coord[1]] == "  ":
+        if not self.fence_space_inspector(direction, coord):
             return True  # Space is open
         else:
             return False  # Space is not open
-
         print("Something went wrong in _check_fence_placement()")
         return False
 
@@ -539,7 +520,7 @@ class QuoridorGame:
         if direction == "v":
             fence_board = self.get_vertical_wall_board()
         elif direction == "h":
-            fence_board = self.get_vertical_wall_board()
+            fence_board = self.get_horizontal_wall_board()
         else:
             print("Invalid direction")
             return False
@@ -588,20 +569,22 @@ class QuoridorGame:
             print("Out of fences player", player)
             return False
 
-        # Offset the position to match the wall boards
         if direction == "v":
-            coord = (coord[0] - 1, coord[1])
+            new_coord = (coord[0] - 1, coord[1])
         if direction == "h":
-            coord = (coord[0], coord[1] - 1)
+            new_coord = (coord[0], coord[1] - 1)
 
+        # Offset the position to match the wall boards
         if self._fence_coordinate_check(direction, coord) is False:
             print("Coordinates are out of bounds")
             return False
 
+
+
         if self._check_fence_placement(direction, coord):  # Check fence position is clear
             # Position is unoccupied
             self._use_a_fences(player)  # reduce number of fences
-            self._set_fence_space(direction, coord)  # Place the fence
+            self._set_fence_space(direction, new_coord)  # Place the fence
             self.next_turn()  # End Turn
 
     def is_winner(self, player):
@@ -613,53 +596,10 @@ class QuoridorGame:
         if player == 1:
             if self.get_player_position(player)[1] == 8:
                 return True  # player 1 won
+            else:
+                return False
         elif player == 2:
             if self.get_player_position(player)[1] == 0:
                 return True  # player 2 won
-
-
-# some test code
-game = QuoridorGame()
-# game._debug_board_coord()
-
-# game.print_board()
-# game.move_pawn(1, (4, 1))
-# game.print_board()
-# game.place_fence(2, "h", (4, 2))
-# game.print_board()
-# game.move_pawn(1, (3, 1))
-# game.print_board()
-# game.place_fence(2, "v", (4, 5))
-# game.print_board()
-# game.move_pawn(1, (4, 1))
-# game.print_board()
-# game.place_fence(1, "v", (1, 2))
-# game.print_board()
-# game.place_fence(2, "v", (1, 3))
-# game.print_board()
-# game.place_fence(1, "v", (1, 4))
-# game.print_board()
-# game.place_fence(2, "v", (1, 5))
-# game.print_board()
-# game.place_fence(1, "v", (1, 6))
-# game.print_board()
-# game.place_fence(2, "v", (1, 7))
-# game.print_board()
-# game.place_fence(1, "v", (1, 8))
-# game.print_board()
-# game.place_fence(2, "v", (1, 8))
-# game.print_board()
-# game.place_fence(2, "v", (2, 3))
-# game.place_fence(1, "v", (3, 3))
-# game.place_fence(2, "v", (3, 4))
-# game.place_fence(1, "v", (3, 5))
-# game.place_fence(2, "v", (3, 6))
-# game.print_board()
-# input()
-# game.place_fence(1, "v", (3, 7))
-# game.print_board()
-# input()
-# game.place_fence(2, "v", (3, 8))
-# game.place_fence(1, "v", (3, 9))
-# game.place_fence(2, "v", (5, 5))
-# game.print_board()
+            else:
+                return False
