@@ -502,9 +502,8 @@ class QuoridorGame:
         elif direction == "v":
             fence_board = self.get_vertical_wall_board()
         else:
-            print("Something went wrong")
+            print("Invalid Direction")
             return
-        # Check that a path to the end remains todo
         if not self.fence_space_inspector(direction, coord):
             return True  # Space is open
         else:
@@ -579,13 +578,12 @@ class QuoridorGame:
             print("Coordinates are out of bounds")
             return False
 
-
-
         if self._check_fence_placement(direction, coord):  # Check fence position is clear
             # Position is unoccupied
             self._use_a_fences(player)  # reduce number of fences
             self._set_fence_space(direction, new_coord)  # Place the fence
             self.next_turn()  # End Turn
+            return True
 
     def is_winner(self, player):
         """This function will be called at the end of a player move to check if the player has won. It will check the
