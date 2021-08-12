@@ -91,8 +91,5 @@ class TestingQuoidor(unittest.TestCase):
         self.assertEqual(game.get_player_position(1), (4, 4))
         self.assertEqual(game.get_turn(), 1)
 
-
-
-
 if __name__ == '__main__':
     unittest.main()
