@@ -567,23 +567,21 @@ class QuoridorGame:
         if self.get_fences_remaining(player) <= 0:
             print("Out of fences player", player)
             return False
-
         if direction == "v":
             new_coord = (coord[0] - 1, coord[1])
         if direction == "h":
             new_coord = (coord[0], coord[1] - 1)
-
-        # Offset the position to match the wall boards
-        if self._fence_coordinate_check(direction, coord) is False:
+        if self._fence_coordinate_check(direction, coord) is False:  # Offset the position to match the wall boards
             print("Coordinates are out of bounds")
             return False
-
         if self._check_fence_placement(direction, coord):  # Check fence position is clear
             # Position is unoccupied
             self._use_a_fences(player)  # reduce number of fences
             self._set_fence_space(direction, new_coord)  # Place the fence
             self.next_turn()  # End Turn
             return True
+        else:
+            return False
 
     def is_winner(self, player):
         """This function will be called at the end of a player move to check if the player has won. It will check the
