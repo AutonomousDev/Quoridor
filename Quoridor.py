@@ -51,6 +51,7 @@ DETAILED TEXT DESCRIPTIONS OF HOW TO HANDLE THE SCENARIOS
             uses □ ascii characters to represent spaces and look pretty when printing the board.
 """
 
+
 class QuoridorGame:
     """The Quoridor class contains everything needed to play the game"""
 
@@ -122,7 +123,7 @@ class QuoridorGame:
         """Return the Horizontal wall board"""
         return self._horizontal_wall_board
 
-    def _fence_space_inspector_v(self, direction:str, coord:tuple):
+    def _fence_space_inspector_v(self, direction: str, coord: tuple):
         """Vertical fence checks"""
         if coord[0] == 0:
             return False  # x=0 can't have fences
@@ -131,7 +132,7 @@ class QuoridorGame:
             return False  # Space is open
         return True  # Fence detected
 
-    def _fence_space_inspector_h(self, direction:str, coord:tuple):
+    def _fence_space_inspector_h(self, direction: str, coord: tuple):
         """Horizontal fence checks"""
         if coord[1] == 0:
             return False  # y=0 can't have fences
@@ -165,7 +166,7 @@ class QuoridorGame:
             for y in range(4):
                 for d in directions:
                     coord = (x - 1 + position_i[0], y - 1 + position_i[1])
-                    delta_fence_map[(x-1, y-1, d)] = self.fence_space_inspector(d, coord)
+                    delta_fence_map[(x - 1, y - 1, d)] = self.fence_space_inspector(d, coord)
         return self._fence_check_horizontal(delta_fence_map, no_fence_block)
 
     def _fence_check_horizontal(self, delta_fence_map, no_fence_block):
@@ -224,7 +225,7 @@ class QuoridorGame:
         else:
             no_fence_block[(-1, -1)] = False
         # -1,1 delta movement
-        if not delta_fence_map[(0, 1,"h")] and delta_fence_map[(0, 2, "h")] and not delta_fence_map[(0, 1, "v")]:
+        if not delta_fence_map[(0, 1, "h")] and delta_fence_map[(0, 2, "h")] and not delta_fence_map[(0, 1, "v")]:
             no_fence_block[(-1, 1)] = True
         else:
             no_fence_block[(-1, 1)] = False
@@ -400,7 +401,7 @@ class QuoridorGame:
                 return True  # No walls in the way
         # Is movement diagonal?
         elif delta_movement == (-1, -1) or delta_movement == (-1, 1) or delta_movement == (1, 1) or delta_movement == (
-            1, -1):
+                1, -1):
             if self._diagonal_move_check(coord, player, delta_movement):
                 return True
         # Is it a Jump
